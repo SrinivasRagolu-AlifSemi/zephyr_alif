@@ -139,7 +139,7 @@ static int ensemble_e3_dk_rtss_he_init(void)
 		/* Enable HFOSC (38.4 MHz) and CFG (100 MHz) clock.*/
 		sys_set_bits(CGU_CLK_ENA, BIT(21) | BIT(23));
 	}
-	if (IS_ENABLED(CONFIG_VIDEO_ENSEMBLE_MIPI_CSI2)) {
+	if (IS_ENABLED(CONFIG_VIDEO_MIPI_CSI2_DW)) {
 		/* Enable CSI2 controller peripheral clock. */
 		sys_set_bits(EXPMST_PERIPH_CLK_EN, BIT(24));
 
@@ -163,6 +163,12 @@ static int ensemble_e3_dk_rtss_he_init(void)
 
 	/*LP-SPI Flex GPIO */
 	sys_write32(0x1, VBAT_BASE);
+
+	/* LPUART settings */
+	if (IS_ENABLED(CONFIG_SERIAL)) {
+		/* Enable clock supply for LPUART */
+		sys_write32(0x1, AON_RTSS_HE_LPUART_CKEN);
+	}
 
 	/* Enable DMA */
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dma2), arm_dma_pl330, okay)
@@ -236,6 +242,12 @@ static int ensemble_e3_dk_rtss_he_init(void)
 	data = sys_read32(CGU_CLK_ENA);
 	data |= ((1 << 20) | (1 << 23));
 	sys_write32(data, CGU_CLK_ENA);
+#endif
+
+	/* I3C settings */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i3c0), okay)
+	/*I3C Flex GPIO */
+	sys_write32(0x1, VBAT_BASE);
 #endif
 	return 0;
 }

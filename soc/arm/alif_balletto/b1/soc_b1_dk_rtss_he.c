@@ -19,6 +19,9 @@
 #include "tgu_M55.h"
 #endif
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -26,8 +29,6 @@
  */
 static int balletto_b1_dk_rtss_he_init(void)
 {
-	uint32_t reg_val;
-
 	/* Enable ICACHE */
 	sys_cache_instr_enable();
 
@@ -51,6 +52,16 @@ static int balletto_b1_dk_rtss_he_init(void)
 
 	/* Enable AHI Tracing */
 	sys_write32(0x00000004, 0x1a605008);
+
+	/* Set AHI and HCI break condition.
+	 * Makes link layer deep sleep possible if one, or the other, is not used and its driver
+	 * isn't loaded
+	 */
+	uint8_t lcr_reg1 = sys_read8(0x4300A00c);
+	uint8_t lcr_reg2 = sys_read8(0x4300B00c);
+
+	sys_write8(lcr_reg1 | 0x40, 0x4300A00c);
+	sys_write8(lcr_reg2 | 0x40, 0x4300B00c);
 
 	/* lptimer settings */
 #if DT_HAS_COMPAT_STATUS_OKAY(snps_dw_timers)
@@ -179,7 +190,7 @@ static int balletto_b1_dk_rtss_he_init(void)
 	sys_write32(0x1, VBAT_BASE);
 #endif
 	/* Enable HFOSC and 160MHz clock */
-	reg_val  = sys_read32(CGU_CLK_ENA);
+	uint32_t reg_val = sys_read32(CGU_CLK_ENA);
 	reg_val |= ((1 << 20) | (1 << 23));
 	sys_write32(reg_val, CGU_CLK_ENA);
 #endif

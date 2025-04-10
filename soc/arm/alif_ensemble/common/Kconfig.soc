@@ -27,12 +27,12 @@ config SOC_SUPPORT_ARM_MHUV2
 	  SoC support communication through Arm MHUv2
 
 config SPI_DW_ENABLE
-	bool
+	bool "SPI DW"
 	default y
 	depends on SPI
 	help
 	  Enable Designware SPI driver.
-	select HAS_SPI_DW
+	select SPI_DW
 
 if COUNTER_SNPS_DW
 config LPTIMER0_OUTPUT_TOGGLE
@@ -58,22 +58,13 @@ config LPTIMER1_EXT_CLK_FREQ
 	  Provide lptimer 1 clock frequency for external clock source.
 endif # COUNTER_SNPS_DW
 
-config  ROM_ITCM
-	bool "Link code into internal instruction tightly coupled memory (ITCM)"
-	default n if BOOTLOADER_MCUBOOT || MCUBOOT
-	default y
-	help
-	  Enable this to build applications to run from the ITCM.
-
-if ROM_ITCM || !XIP
 config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/itcm@0,0,K)
+	default $(dt_node_reg_size_int,$(dt_nodelabel_path,itcm),0,K)  if !XIP
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/itcm@0)
-endif # ROM_ITCM
+	default $(dt_node_reg_addr_hex,$(dt_nodelabel_path,itcm))      if !XIP
 
-if !ROM_ITCM && RTSS_HP && !USE_DT_CODE_PARTITION
+if RTSS_HP && !USE_DT_CODE_PARTITION
 config FLASH_LOAD_OFFSET
 	default 0x200000
 endif
@@ -98,3 +89,15 @@ config  SRAM1_REGION
 	default "SRAM1" if $(dt_nodelabel_enabled,sram1)
 	help
 	    Provide config SRAM1 region
+
+config OSPI0_XIP_REGION
+	string
+	default "ospi0" if $(dt_nodelabel_enabled,ospi0)
+	help
+	    Configure OSPI0 XIP memory mapped region name
+
+config OSPI1_XIP_REGION
+	string
+	default "ospi1" if $(dt_nodelabel_enabled,ospi1)
+	help
+	    Configure OSPI1 XIP memory mapped region name

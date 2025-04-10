@@ -77,12 +77,12 @@ config SOC_SUPPORT_ARM_MHUV2
 	  SoC support communication through Arm MHUv2
 
 config SPI_DW_ENABLE
-	bool
+	bool "SPI DW"
 	default y
 	depends on SPI
 	help
 	  Enable Designware SPI driver.
-	select HAS_SPI_DW
+	select SPI_DW
 
 if COUNTER_SNPS_DW
 config LPTIMER0_OUTPUT_TOGGLE
@@ -126,27 +126,20 @@ choice CSPRNG_GENERATOR_CHOICE
 	default CTR_DRBG_CSPRNG_GENERATOR
 endchoice
 
-config  ROM_ITCM
-	bool "Link code into internal instruction tightly coupled memory (ITCM)"
-	default n if BOOTLOADER_MCUBOOT || MCUBOOT
-	default y
-	help
-	  Enable this to build applications to run from the ITCM.
-
-# Workaround for not being able to have commas in macro arguments
-#DT_CHOSEN_Z_FLASH := zephyr,flash
-#DT_CHOSEN_Z_ITCM := zephyr,itcm
-
 config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/mram_flash@80000000,0,K) if !ROM_ITCM
-	default $(dt_node_reg_size_int,/soc/itcm@0,0,K) if ROM_ITCM
+	default $(dt_node_reg_size_int,$(dt_nodelabel_path,itcm),0,K) if !XIP
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/mram_flash@80000000) if !ROM_ITCM
-	default $(dt_node_reg_addr_hex,/soc/itcm@0) if ROM_ITCM
+	default $(dt_node_reg_addr_hex,$(dt_nodelabel_path,itcm))     if !XIP
 
 config  NONSECURE0_REGION
 	string
 	default "NS" if ARM_SECURE_FIRMWARE && $(dt_nodelabel_enabled,ns)
 	help
 	    Provide config Non-Secure region
+
+config OSPI0_XIP_REGION
+	string
+	default "ospi0" if $(dt_nodelabel_enabled,ospi0)
+	help
+	    Configure OSPI0 XIP memory mapped region name
